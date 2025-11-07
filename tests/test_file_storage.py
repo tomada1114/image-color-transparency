@@ -66,3 +66,38 @@ def test_sanitize_filename() -> None:
     assert ".." not in sanitize_filename("../../etc/passwd")
     assert "/" not in sanitize_filename("path/to/file.png")
     assert "\\" not in sanitize_filename("path\\to\\file.png")
+
+    # 空のファイル名はデフォルト名になる
+    assert sanitize_filename("") == "unnamed_file"
+    # "..." は "_." になる（.. は _ に置換され、最後の . は残る）
+    assert sanitize_filename("...") == "_."
+
+
+def test_ensure_session_directory_creates_directory() -> None:
+    """ensure_session_directoryがディレクトリを作成することをテスト"""
+    import shutil
+    from transpalentor.infrastructure.file_storage import (
+        ensure_session_directory,
+        generate_session_id,
+    )
+
+    session_id = generate_session_id()
+
+    try:
+        session_dir = ensure_session_directory(session_id)
+
+        # ディレクトリが作成されていることを確認
+        assert session_dir.exists()
+        assert session_dir.is_dir()
+    finally:
+        # クリーンアップ
+        if session_dir.exists():
+            shutil.rmtree(session_dir)
+
+
+def test_ensure_session_directory_invalid_session_id() -> None:
+    """無効なセッションIDでエラーが発生することをテスト"""
+    from transpalentor.infrastructure.file_storage import ensure_session_directory
+
+    with pytest.raises(ValueError, match="Invalid session_id format"):
+        ensure_session_directory("invalid-session-id")
