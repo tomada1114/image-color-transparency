@@ -218,6 +218,74 @@ h1 {
     border-color: #667eea;
 }
 
+/* Threshold Input */
+.threshold-input {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+.threshold-input label {
+    font-weight: 600;
+    color: #555;
+}
+
+.threshold-input input[type="range"] {
+    flex: 1;
+    min-width: 150px;
+    height: 6px;
+    border-radius: 3px;
+    background: #ddd;
+    outline: none;
+    cursor: pointer;
+}
+
+.threshold-input input[type="range"]::-webkit-slider-thumb {
+    appearance: none;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: #667eea;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.threshold-input input[type="range"]::-webkit-slider-thumb:hover {
+    background: #5568d3;
+    transform: scale(1.1);
+}
+
+.threshold-input input[type="range"]::-moz-range-thumb {
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: #667eea;
+    cursor: pointer;
+    border: none;
+    transition: all 0.2s ease;
+}
+
+.threshold-input input[type="range"]::-moz-range-thumb:hover {
+    background: #5568d3;
+    transform: scale(1.1);
+}
+
+.threshold-value {
+    font-family: 'Courier New', monospace;
+    font-weight: 600;
+    color: #667eea;
+    min-width: 30px;
+    text-align: center;
+}
+
+.threshold-hint {
+    color: #999;
+    font-size: 0.85rem;
+    width: 100%;
+    margin-top: -5px;
+}
+
 /* Loading Spinner */
 .loading {
     display: none;
