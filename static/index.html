@@ -46,6 +46,13 @@
                         <input type="number" id="rgbB" min="0" max="255" placeholder="B" value="255">
                     </div>
 
+                    <div class="threshold-input">
+                        <label for="threshold">色の許容範囲:</label>
+                        <input type="range" id="threshold" min="0" max="100" value="30">
+                        <span id="thresholdValue" class="threshold-value">30</span>
+                        <span class="threshold-hint">（値が大きいほど広範囲の色を透明化）</span>
+                    </div>
+
                     <div class="color-preview">
                         <div id="colorBox" class="color-box"></div>
                         <span id="colorValue" class="color-value">RGB(-, -, -)</span>

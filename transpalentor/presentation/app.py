@@ -180,7 +180,9 @@ async def process_transparency(request: ProcessRequest) -> ProcessResponse:
 
     # 透過処理を実行
     rgb_tuple = tuple(request.rgb)
-    processed_image = make_transparent(image, rgb=rgb_tuple)
+    processed_image = make_transparent(
+        image, rgb=rgb_tuple, threshold=request.threshold
+    )
 
     # 処理済み画像のファイル名を生成
     name_without_ext = original_path.stem

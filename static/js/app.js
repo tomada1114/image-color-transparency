@@ -19,6 +19,8 @@ const elements = {
     rgbR: null,
     rgbG: null,
     rgbB: null,
+    threshold: null,
+    thresholdValue: null,
     loading: null,
     errorMessage: null,
 };
@@ -44,6 +46,8 @@ function initElements() {
     elements.rgbR = document.getElementById('rgbR');
     elements.rgbG = document.getElementById('rgbG');
     elements.rgbB = document.getElementById('rgbB');
+    elements.threshold = document.getElementById('threshold');
+    elements.thresholdValue = document.getElementById('thresholdValue');
     elements.loading = document.getElementById('loading');
     elements.errorMessage = document.getElementById('errorMessage');
 }
@@ -68,6 +72,11 @@ function attachEventListeners() {
             input.addEventListener('input', handleRgbInput);
         }
     });
+
+    // 閾値スライダーの変更イベント
+    if (elements.threshold) {
+        elements.threshold.addEventListener('input', handleThresholdInput);
+    }
 }
 
 // EyeDropper APIのサポート確認
@@ -166,6 +175,12 @@ function handleRgbInput() {
     }
 }
 
+// 閾値入力ハンドラ
+function handleThresholdInput() {
+    const threshold = parseInt(elements.threshold.value) || 0;
+    elements.thresholdValue.textContent = threshold;
+}
+
 // 選択色の設定
 function setSelectedColor(r, g, b) {
     AppState.selectedColor = { r, g, b };
@@ -194,6 +209,8 @@ async function handleProcess() {
     hideError();
 
     try {
+        const threshold = parseInt(elements.threshold.value) || 30;
+
         const response = await fetch('/api/process', {
             method: 'POST',
             headers: {
@@ -203,6 +220,7 @@ async function handleProcess() {
                 session_id: AppState.sessionId,
                 filename: AppState.filename,
                 rgb: [AppState.selectedColor.r, AppState.selectedColor.g, AppState.selectedColor.b],
+                threshold: threshold,
             }),
         });
 

@@ -29,6 +29,7 @@ class ProcessRequest(BaseModel):
     session_id: str = Field(..., description="セッションID")
     filename: str = Field(..., description="処理対象のファイル名")
     rgb: list[int] = Field(..., min_length=3, max_length=3, description="透過対象色 [R, G, B]")
+    threshold: int = Field(default=30, ge=0, le=255, description="色の許容範囲 (0-255)")
 
     @field_validator("rgb")
     @classmethod
