@@ -64,6 +64,31 @@
                 </div>
             </div>
 
+            <!-- ツール選択セクション -->
+            <div id="toolSection" class="tool-section" style="display: none;">
+                <h3>ツールを選択</h3>
+                <div class="tool-controls">
+                    <button id="eyedropperToolBtn" class="tool-btn active">
+                        🎨 スポイトツール
+                    </button>
+                    <button id="eraserToolBtn" class="tool-btn">
+                        🧹 消しゴムツール
+                    </button>
+                </div>
+
+                <!-- 消しゴムツールオプション -->
+                <div id="eraserOptions" class="eraser-options" style="display: none;">
+                    <label>ブラシサイズ:</label>
+                    <div class="brush-sizes">
+                        <button class="brush-size-btn active" data-size="5">小</button>
+                        <button class="brush-size-btn" data-size="10">中</button>
+                        <button class="brush-size-btn" data-size="20">大</button>
+                        <button class="brush-size-btn" data-size="40">特大</button>
+                    </div>
+                    <span class="tool-hint">処理後の画像上でドラッグして消しゴムを使用できます</span>
+                </div>
+            </div>
+
             <div class="preview-container">
                 <div class="preview-box">
                     <h3>元画像</h3>
@@ -74,8 +99,9 @@
 
                 <div class="preview-box">
                     <h3>処理後</h3>
-                    <div class="image-wrapper">
+                    <div class="image-wrapper canvas-container">
                         <img id="processedImage" src="" alt="処理後の画像">
+                        <canvas id="eraserCanvas"></canvas>
                     </div>
                 </div>
             </div>

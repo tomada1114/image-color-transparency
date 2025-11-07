@@ -10,7 +10,7 @@ from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 
 from .error_handlers import register_exception_handlers
-from .models import UploadResponse, ProcessRequest, ProcessResponse
+from .models import UploadResponse, ProcessRequest, ProcessResponse, EraseRequest, EraseResponse
 from .exceptions import SessionNotFoundError
 from ..application.validation import validate_image_file, get_file_extension
 from ..infrastructure.file_storage import (
@@ -200,6 +200,60 @@ async def process_transparency(request: ProcessRequest) -> ProcessResponse:
         session_id=request.session_id,
         processed_url=processed_url,
         filename=processed_filename,
+    )
+
+
+@app.post("/api/erase", response_model=EraseResponse)
+async def erase_transparency(request: EraseRequest) -> EraseResponse:
+    """
+    消しゴムツールで指定座標を透過処理
+
+    Args:
+        request: 消しゴムツールリクエスト（セッションID、ファイル名、座標、ブラシサイズ）
+
+    Returns:
+        処理済み画像のURL
+
+    Raises:
+        SessionNotFoundError: セッションまたはファイルが見つからない場合
+    """
+    from PIL import Image
+    from ..domain.transparency import erase_at_coordinates
+
+    # セッションIDのバリデーション
+    if not validate_session_id(request.session_id):
+        raise SessionNotFoundError(session_id=request.session_id)
+
+    # セッションディレクトリを取得
+    session_dir = get_session_directory(request.session_id)
+
+    # 画像のパスを構築
+    image_path = session_dir / request.filename
+
+    # ファイルが存在するか確認
+    if not image_path.exists():
+        raise SessionNotFoundError(session_id=request.session_id)
+
+    # 画像を読み込み
+    image = Image.open(image_path)
+
+    # 消しゴム処理を実行
+    processed_image = erase_at_coordinates(
+        image, strokes=request.strokes, brush_size=request.brush_size
+    )
+
+    # 処理済み画像を同じファイルに上書き保存
+    processed_image.save(str(image_path), format="PNG")
+
+    # 処理済み画像のURLを生成（キャッシュ回避のためタイムスタンプを追加）
+    import time
+    timestamp = int(time.time() * 1000)
+    processed_url = f"/api/images/{request.session_id}/{request.filename}?t={timestamp}"
+
+    return EraseResponse(
+        session_id=request.session_id,
+        processed_url=processed_url,
+        filename=request.filename,
     )
 
 
