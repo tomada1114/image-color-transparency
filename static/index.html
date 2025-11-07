@@ -7,9 +7,26 @@
     <link rel="stylesheet" href="/static/css/style.css">
 </head>
 <body>
+    <!-- ヘッダー -->
+    <header class="app-header">
+        <div class="header-container">
+            <div class="header-brand">
+                <span class="brand-logo">🎨</span>
+                <h1 class="brand-title">Transpalentor</h1>
+            </div>
+            <nav class="header-nav">
+                <a href="#" class="nav-link active">ホーム</a>
+                <a href="#about" class="nav-link">使い方</a>
+                <a href="https://github.com" target="_blank" class="nav-link">GitHub</a>
+            </nav>
+        </div>
+    </header>
+
     <div id="app">
-        <h1>Transpalentor</h1>
-        <p class="subtitle">画像の色指定による透過処理アプリケーション</p>
+        <div class="page-header">
+            <h2 class="page-title">画像透過処理</h2>
+            <p class="page-description">色を指定して画像を透明化できます</p>
+        </div>
 
         <!-- アップロードセクション -->
         <div class="upload-section">
@@ -107,6 +124,34 @@
             </div>
         </div>
     </div>
+
+    <!-- フッター -->
+    <footer class="app-footer">
+        <div class="footer-container">
+            <div class="footer-content">
+                <div class="footer-section">
+                    <h4 class="footer-heading">Transpalentor</h4>
+                    <p class="footer-text">画像の色指定による透過処理アプリケーション</p>
+                </div>
+                <div class="footer-section">
+                    <h4 class="footer-heading">リンク</h4>
+                    <ul class="footer-links">
+                        <li><a href="#" class="footer-link">使い方</a></li>
+                        <li><a href="https://github.com" target="_blank" class="footer-link">GitHub</a></li>
+                        <li><a href="#" class="footer-link">お問い合わせ</a></li>
+                    </ul>
+                </div>
+                <div class="footer-section">
+                    <h4 class="footer-heading">技術スタック</h4>
+                    <p class="footer-text">FastAPI • Python • Pillow • JavaScript</p>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p class="footer-copyright">© 2024 Transpalentor. All rights reserved.</p>
+            </div>
+        </div>
+    </footer>
+
     <script src="/static/js/app.js"></script>
 </body>
 </html>

@@ -139,3 +139,41 @@ def test_upload_sanitizes_filename() -> None:
     assert ".." not in data["filename"]
     assert "/" not in data["filename"]
     assert "\\" not in data["filename"]
+
+
+def test_upload_without_filename() -> None:
+    """ファイル名がない場合の処理をテスト"""
+    from transpalentor.presentation.app import app
+
+    client = TestClient(app)
+
+    image_data = create_test_image("PNG")
+
+    # ファイル名なし（Noneになる）
+    response = client.post(
+        "/api/upload", files={"file": (None, image_data, "image/png")}
+    )
+
+    # FastAPIはファイル名がない場合、バリデーションエラーになる可能性がある
+    # ここでは実際の動作を確認し、適切に処理されることを確認
+    # （422エラーまたは200 OKの両方が許容される）
+    assert response.status_code in [200, 422]
+
+
+def test_upload_corrupted_image() -> None:
+    """破損した画像ファイルのアップロードをテスト"""
+    from transpalentor.presentation.app import app
+
+    client = TestClient(app)
+
+    # 破損した（無効な）画像データ
+    corrupted_data = io.BytesIO(b"This is not a valid image file")
+
+    response = client.post(
+        "/api/upload",
+        files={"file": ("corrupted.png", corrupted_data, "image/png")},
+    )
+
+    assert response.status_code == 422
+    data = response.json()
+    assert "UNSUPPORTED_FORMAT" in str(data)
