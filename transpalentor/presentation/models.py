@@ -1,9 +1,9 @@
 """
 APIリクエスト/レスポンスのPydanticモデル
 """
-from typing import Optional
+from typing import Optional, Annotated
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 
 
 class RGBColor(BaseModel):
@@ -27,14 +27,24 @@ class ProcessRequest(BaseModel):
     """透過処理リクエスト"""
 
     session_id: str = Field(..., description="セッションID")
-    target_color: RGBColor = Field(..., description="透過対象色")
+    filename: str = Field(..., description="処理対象のファイル名")
+    rgb: list[int] = Field(..., min_length=3, max_length=3, description="透過対象色 [R, G, B]")
+
+    @field_validator("rgb")
+    @classmethod
+    def validate_rgb_range(cls, v: list[int]) -> list[int]:
+        """RGB値の範囲をバリデーション"""
+        for value in v:
+            if not 0 <= value <= 255:
+                raise ValueError(f"RGB値は0-255の範囲である必要があります: {value}")
+        return v
 
 
 class ProcessResponse(BaseModel):
     """透過処理レスポンス"""
 
     session_id: str = Field(..., description="セッションID")
-    processed_image_url: str = Field(..., description="処理済み画像のURL")
+    processed_url: str = Field(..., description="処理済み画像のURL")
     filename: str = Field(..., description="ファイル名")
 
 
