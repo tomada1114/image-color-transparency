@@ -15,8 +15,77 @@ Kiro-style Spec Driven Development implementation using claude code slash comman
 **Specs** (`.kiro/specs/`) - Formalize development process for individual features
 
 ### Active Specifications
-- `image-color-transparency`: 画像の色指定による透過処理アプリ (Phase: initialized)
+- `image-color-transparency`: 画像の色指定による透過処理アプリ (Phase: **implementation**)
 - Use `/kiro:spec-status [feature-name]` to check progress
+
+## 実装進捗状況
+
+### ✅ Phase 1: バックエンド基盤 (完了)
+
+**タスク1: プロジェクト基盤のセットアップ**
+- [x] Python プロジェクト構造の初期化
+- [x] FastAPI アプリケーションの基本構成
+- [x] 一時ファイルストレージの初期化
+- [x] ロギングとエラーハンドリング基盤
+
+**タスク2: 画像アップロード機能**
+- [x] ファイルアップロードエンドポイント (`POST /api/upload`)
+- [x] 画像ファイルのバリデーション (PNG/JPEG/BMP, 10MB制限)
+- [x] 一時ファイル保存機能 (UUID v4 セッション管理)
+
+**タスク3: 画像表示機能**
+- [x] 静的ファイル配信エンドポイント (`GET /api/images/{session_id}/{filename}`)
+- [x] 画像読み込みエラーハンドリング
+
+**テスト状況:** 22個のテストが全てパス ✓
+
+### 🚧 Phase 2: コア機能実装 (進行中)
+
+**タスク6: 透過処理機能** (次の優先タスク)
+- [ ] 画像透過処理アルゴリズム (Pillow)
+- [ ] 透過処理APIエンドポイント (`POST /api/process`)
+- [ ] 透過処理のエラーハンドリング
+
+**タスク4: フロントエンドUI基盤**
+- [ ] HTMLページとレイアウト
+- [ ] ファイルアップロードUI
+- [ ] 画像プレビュー表示機能
+
+**タスク5: 色指定機能**
+- [ ] EyeDropper API によるスポイトツール
+- [ ] 代替色指定手段 (カラーピッカー、RGB入力)
+- [ ] 選択色のプレビュー表示
+
+### 📋 Phase 3: 統合と最適化 (未着手)
+
+**タスク7: フロントエンド・バックエンド統合**
+**タスク8: ファイルクリーンアップとセッション管理**
+**タスク9: テストの実装**
+**タスク10: パフォーマンス最適化**
+
+## アーキテクチャ概要
+
+```
+transpalentor/
+├── presentation/      # FastAPI endpoints, models, exceptions
+│   ├── app.py        # メインアプリケーション
+│   ├── models.py     # Pydantic モデル
+│   ├── exceptions.py # カスタム例外
+│   └── error_handlers.py
+├── application/       # ビジネスロジック
+│   └── validation.py # 画像バリデーション
+├── domain/           # ドメインロジック (準備中)
+└── infrastructure/   # インフラストラクチャ
+    ├── file_storage.py # ファイル管理
+    └── logging_config.py
+```
+
+## 技術的ハイライト
+
+- **TDD (Test-Driven Development)**: RED-GREEN-REFACTOR サイクル
+- **レイヤードアーキテクチャ**: 責任の明確な分離
+- **セキュリティ**: ディレクトリトラバーサル対策、ファイルバリデーション
+- **型安全性**: Pydantic による厳密な型チェック
 
 ## Development Guidelines
 - Think in English, but generate responses in Japanese (思考は英語、回答の生成は日本語で行うように)

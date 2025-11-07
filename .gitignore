@@ -44,6 +44,9 @@ tmp/transpalentor/*
 !tmp/transpalentor/.gitkeep
 *.log
 
+# Environment variables
+.env
+
 # OS
 .DS_Store
 Thumbs.db
