@@ -48,31 +48,7 @@
         <div id="errorMessage" class="error-message"></div>
 
         <!-- プレビューセクション -->
-        <div id="previewSection" class="preview-section">
-            <div class="color-picker-section">
-                <h3>透過する色を選択（最大3色）</h3>
-                <div class="color-controls">
-                    <button id="addColorBtn" class="eyedropper-btn">
-                        ➕ 色を追加
-                    </button>
-
-                    <div id="colorList" class="color-list">
-                        <!-- 選択した色のリストがここに表示される -->
-                    </div>
-
-                    <div class="threshold-input">
-                        <label for="threshold">色の許容範囲:</label>
-                        <input type="range" id="threshold" min="0" max="100" value="30">
-                        <span id="thresholdValue" class="threshold-value">30</span>
-                        <span class="threshold-hint">（値が大きいほど広範囲の色を透明化）</span>
-                    </div>
-
-                    <button id="processBtn" class="process-btn" disabled>
-                        透過処理を実行
-                    </button>
-                </div>
-            </div>
-
+        <div id="previewSection" class="preview-section active">
             <!-- ツール選択セクション -->
             <div id="toolSection" class="tool-section" style="display: none;">
                 <h3>ツールを選択</h3>
@@ -98,6 +74,30 @@
                 </div>
             </div>
 
+            <div class="color-picker-section">
+                <h3>透過する色を選択（最大3色）</h3>
+                <div class="color-controls">
+                    <button id="addColorBtn" class="eyedropper-btn" disabled>
+                        ➕ 色を追加
+                    </button>
+
+                    <div id="colorList" class="color-list">
+                        <!-- 選択した色のリストがここに表示される -->
+                    </div>
+
+                    <div class="threshold-input">
+                        <label for="threshold">色の許容範囲:</label>
+                        <input type="range" id="threshold" min="0" max="100" value="30">
+                        <span id="thresholdValue" class="threshold-value">30</span>
+                        <span class="threshold-hint">（値が大きいほど広範囲の色を透明化）</span>
+                    </div>
+
+                    <button id="processBtn" class="process-btn" disabled>
+                        透過処理を実行
+                    </button>
+                </div>
+            </div>
+
             <div class="preview-container">
                 <div class="preview-box">
                     <h3>元画像</h3>
@@ -112,7 +112,23 @@
                         <img id="processedImage" src="" alt="処理後の画像">
                         <canvas id="eraserCanvas"></canvas>
                     </div>
+                    <!-- 処理後画像のアクションボタン -->
+                    <div id="imageActions" class="image-actions" style="display: none;">
+                        <button id="copyToClipboardBtn" class="action-btn">
+                            📋 クリップボードにコピー
+                        </button>
+                        <button id="downloadBtn" class="action-btn">
+                            💾 ダウンロード
+                        </button>
+                    </div>
                 </div>
+            </div>
+
+            <!-- リセットボタン -->
+            <div class="reset-section" style="display: none;" id="resetSection">
+                <button id="resetBtn" class="reset-btn">
+                    🔄 リセット（新しい画像を処理）
+                </button>
             </div>
         </div>
     </div>

@@ -31,6 +31,12 @@ const elements = {
     eraserOptions: null,
     eraserCanvas: null,
     brushSizeBtns: null,
+    // アクションボタン
+    imageActions: null,
+    copyToClipboardBtn: null,
+    downloadBtn: null,
+    resetSection: null,
+    resetBtn: null,
 };
 
 // 初期化
@@ -61,6 +67,12 @@ function initElements() {
     elements.eraserOptions = document.getElementById('eraserOptions');
     elements.eraserCanvas = document.getElementById('eraserCanvas');
     elements.brushSizeBtns = document.querySelectorAll('.brush-size-btn');
+    // アクションボタン
+    elements.imageActions = document.getElementById('imageActions');
+    elements.copyToClipboardBtn = document.getElementById('copyToClipboardBtn');
+    elements.downloadBtn = document.getElementById('downloadBtn');
+    elements.resetSection = document.getElementById('resetSection');
+    elements.resetBtn = document.getElementById('resetBtn');
 }
 
 // イベントリスナーの設定
@@ -113,6 +125,19 @@ function attachEventListeners() {
     if (elements.processedImage) {
         elements.processedImage.addEventListener('load', initCanvas);
     }
+
+    // アクションボタンイベント
+    if (elements.copyToClipboardBtn) {
+        elements.copyToClipboardBtn.addEventListener('click', handleCopyToClipboard);
+    }
+
+    if (elements.downloadBtn) {
+        elements.downloadBtn.addEventListener('click', handleDownload);
+    }
+
+    if (elements.resetBtn) {
+        elements.resetBtn.addEventListener('click', handleReset);
+    }
 }
 
 // EyeDropper APIのサポート確認
@@ -163,10 +188,27 @@ async function handleFileSelect(event) {
         elements.originalImage.src = data.image_url;
         elements.previewSection.classList.add('active');
 
+        // ツールセクションを表示
+        if (elements.toolSection) {
+            elements.toolSection.style.display = 'block';
+        }
+
         // 状態をリセット
         AppState.selectedColors = [];
+        AppState.processedFilename = null;
         updateColorListUI();
         updateProcessButton();
+
+        // アクションボタンとリセットボタンを非表示
+        if (elements.imageActions) {
+            elements.imageActions.style.display = 'none';
+        }
+        if (elements.resetSection) {
+            elements.resetSection.style.display = 'none';
+        }
+
+        // 処理後画像をクリア
+        elements.processedImage.src = '';
 
     } catch (error) {
         console.error('Upload error:', error);
@@ -322,9 +364,12 @@ async function handleProcess() {
         // 処理済み画像を表示（キャッシュ回避のためタイムスタンプを追加）
         elements.processedImage.src = data.processed_url + '?t=' + Date.now();
 
-        // ツールセクションを表示
-        if (elements.toolSection) {
-            elements.toolSection.style.display = 'block';
+        // アクションボタンとリセットボタンを表示
+        if (elements.imageActions) {
+            elements.imageActions.style.display = 'flex';
+        }
+        if (elements.resetSection) {
+            elements.resetSection.style.display = 'block';
         }
 
     } catch (error) {
@@ -585,5 +630,141 @@ async function sendEraseRequest() {
         showError('消しゴム処理に失敗しました: ' + error.message);
     } finally {
         showLoading(false);
+    }
+}
+
+// =========================================
+// アクションボタン関連の関数
+// =========================================
+
+// クリップボードにコピー
+async function handleCopyToClipboard() {
+    if (!AppState.processedFilename) {
+        showError('処理済み画像がありません');
+        return;
+    }
+
+    showLoading(true);
+    hideError();
+
+    try {
+        // 処理済み画像のURLを取得
+        const imageUrl = elements.processedImage.src;
+
+        // 画像をBlobとして取得
+        const response = await fetch(imageUrl);
+        const blob = await response.blob();
+
+        // クリップボードにコピー
+        await navigator.clipboard.write([
+            new ClipboardItem({
+                [blob.type]: blob
+            })
+        ]);
+
+        // 成功メッセージを表示
+        showSuccess('クリップボードにコピーしました');
+    } catch (error) {
+        console.error('Clipboard error:', error);
+        showError('クリップボードへのコピーに失敗しました: ' + error.message);
+    } finally {
+        showLoading(false);
+    }
+}
+
+// ダウンロード
+function handleDownload() {
+    if (!AppState.processedFilename) {
+        showError('処理済み画像がありません');
+        return;
+    }
+
+    try {
+        // 処理済み画像のURLを取得
+        const imageUrl = elements.processedImage.src;
+
+        // ダウンロードリンクを作成
+        const link = document.createElement('a');
+        link.href = imageUrl;
+        link.download = AppState.processedFilename || 'processed_image.png';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+
+        showSuccess('ダウンロードを開始しました');
+    } catch (error) {
+        console.error('Download error:', error);
+        showError('ダウンロードに失敗しました: ' + error.message);
+    }
+}
+
+// リセット
+function handleReset() {
+    // 状態をリセット
+    AppState.sessionId = null;
+    AppState.filename = null;
+    AppState.selectedColors = [];
+    AppState.processedFilename = null;
+    AppState.currentTool = 'eyedropper';
+    AppState.brushSize = 10;
+    AppState.isDrawing = false;
+    AppState.strokes = [];
+
+    // UIをリセット
+    elements.fileInput.value = '';
+    elements.originalImage.src = '';
+    elements.processedImage.src = '';
+    updateColorListUI();
+    updateProcessButton();
+
+    // セクションを非表示
+    if (elements.toolSection) {
+        elements.toolSection.style.display = 'none';
+    }
+    if (elements.imageActions) {
+        elements.imageActions.style.display = 'none';
+    }
+    if (elements.resetSection) {
+        elements.resetSection.style.display = 'none';
+    }
+
+    // ツールを初期状態に戻す
+    if (elements.eyedropperToolBtn) {
+        elements.eyedropperToolBtn.classList.add('active');
+    }
+    if (elements.eraserToolBtn) {
+        elements.eraserToolBtn.classList.remove('active');
+    }
+    if (elements.eraserOptions) {
+        elements.eraserOptions.style.display = 'none';
+    }
+    if (elements.eraserCanvas) {
+        elements.eraserCanvas.classList.remove('active');
+        const ctx = elements.eraserCanvas.getContext('2d');
+        ctx.clearRect(0, 0, elements.eraserCanvas.width, elements.eraserCanvas.height);
+    }
+
+    // 閾値をリセット
+    if (elements.threshold) {
+        elements.threshold.value = 30;
+        elements.thresholdValue.textContent = '30';
+    }
+
+    hideError();
+    showSuccess('リセットしました。新しい画像を選択してください。');
+}
+
+// 成功メッセージの表示
+function showSuccess(message) {
+    if (elements.errorMessage) {
+        elements.errorMessage.textContent = message;
+        elements.errorMessage.classList.add('active');
+        elements.errorMessage.classList.add('success');
+
+        // 3秒後に自動的に非表示
+        setTimeout(() => {
+            elements.errorMessage.classList.remove('active');
+            elements.errorMessage.classList.remove('success');
+        }, 3000);
     }
 }
