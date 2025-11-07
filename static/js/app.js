@@ -366,13 +366,13 @@ function initCanvas() {
     const img = elements.processedImage;
     const canvas = elements.eraserCanvas;
 
-    // 画像のサイズに合わせてCanvasをリサイズ
-    canvas.width = img.width;
-    canvas.height = img.height;
+    // 画像の実際のサイズに合わせてCanvasの内部解像度を設定
+    canvas.width = img.naturalWidth;
+    canvas.height = img.naturalHeight;
 
-    // Canvasの位置とサイズを画像に合わせる
-    canvas.style.width = img.width + 'px';
-    canvas.style.height = img.height + 'px';
+    // Canvasの表示サイズを画像の表示サイズに合わせる
+    canvas.style.width = img.offsetWidth + 'px';
+    canvas.style.height = img.offsetHeight + 'px';
 }
 
 // Canvas座標を取得（マウス位置を画像座標に変換）
