@@ -2,7 +2,7 @@
 const AppState = {
     sessionId: null,
     filename: null,
-    selectedColor: null,
+    selectedColors: [], // 複数色対応に変更（最大3色）
     processedFilename: null,
     currentTool: 'eyedropper', // 'eyedropper' or 'eraser'
     brushSize: 10,
@@ -17,13 +17,9 @@ const elements = {
     previewSection: null,
     originalImage: null,
     processedImage: null,
-    eyedropperBtn: null,
+    addColorBtn: null,
+    colorList: null,
     processBtn: null,
-    colorBox: null,
-    colorValue: null,
-    rgbR: null,
-    rgbG: null,
-    rgbB: null,
     threshold: null,
     thresholdValue: null,
     loading: null,
@@ -51,13 +47,9 @@ function initElements() {
     elements.previewSection = document.getElementById('previewSection');
     elements.originalImage = document.getElementById('originalImage');
     elements.processedImage = document.getElementById('processedImage');
-    elements.eyedropperBtn = document.getElementById('eyedropperBtn');
+    elements.addColorBtn = document.getElementById('addColorBtn');
+    elements.colorList = document.getElementById('colorList');
     elements.processBtn = document.getElementById('processBtn');
-    elements.colorBox = document.getElementById('colorBox');
-    elements.colorValue = document.getElementById('colorValue');
-    elements.rgbR = document.getElementById('rgbR');
-    elements.rgbG = document.getElementById('rgbG');
-    elements.rgbB = document.getElementById('rgbB');
     elements.threshold = document.getElementById('threshold');
     elements.thresholdValue = document.getElementById('thresholdValue');
     elements.loading = document.getElementById('loading');
@@ -77,20 +69,13 @@ function attachEventListeners() {
         elements.fileInput.addEventListener('change', handleFileSelect);
     }
 
-    if (elements.eyedropperBtn) {
-        elements.eyedropperBtn.addEventListener('click', handleEyeDropper);
+    if (elements.addColorBtn) {
+        elements.addColorBtn.addEventListener('click', handleAddColor);
     }
 
     if (elements.processBtn) {
         elements.processBtn.addEventListener('click', handleProcess);
     }
-
-    // RGB入力フィールドの変更イベント
-    [elements.rgbR, elements.rgbG, elements.rgbB].forEach(input => {
-        if (input) {
-            input.addEventListener('input', handleRgbInput);
-        }
-    });
 
     // 閾値スライダーの変更イベント
     if (elements.threshold) {
@@ -133,9 +118,9 @@ function attachEventListeners() {
 // EyeDropper APIのサポート確認
 function checkEyeDropperSupport() {
     if (!window.EyeDropper) {
-        if (elements.eyedropperBtn) {
-            elements.eyedropperBtn.disabled = true;
-            elements.eyedropperBtn.title = 'お使いのブラウザはEyeDropper APIをサポートしていません';
+        if (elements.addColorBtn) {
+            elements.addColorBtn.disabled = true;
+            elements.addColorBtn.title = 'お使いのブラウザはEyeDropper APIをサポートしていません';
         }
     }
 }
@@ -177,7 +162,11 @@ async function handleFileSelect(event) {
         // 画像をプレビュー表示
         elements.originalImage.src = data.image_url;
         elements.previewSection.classList.add('active');
-        elements.processBtn.disabled = true; // 色が選択されるまで無効
+
+        // 状態をリセット
+        AppState.selectedColors = [];
+        updateColorListUI();
+        updateProcessButton();
 
     } catch (error) {
         console.error('Upload error:', error);
@@ -187,8 +176,14 @@ async function handleFileSelect(event) {
     }
 }
 
-// EyeDropperハンドラ
-async function handleEyeDropper() {
+// 色追加ハンドラ
+async function handleAddColor() {
+    // 最大3色まで
+    if (AppState.selectedColors.length >= 3) {
+        showError('最大3色まで選択できます');
+        return;
+    }
+
     if (!window.EyeDropper) {
         showError('お使いのブラウザはEyeDropper APIをサポートしていません');
         return;
@@ -204,7 +199,7 @@ async function handleEyeDropper() {
         const g = parseInt(color.slice(3, 5), 16);
         const b = parseInt(color.slice(5, 7), 16);
 
-        setSelectedColor(r, g, b);
+        addColorToList(r, g, b);
     } catch (error) {
         // ユーザーがキャンセルした場合はエラーを表示しない
         if (error.name !== 'AbortError') {
@@ -214,15 +209,46 @@ async function handleEyeDropper() {
     }
 }
 
-// RGB入力ハンドラ
-function handleRgbInput() {
-    const r = parseInt(elements.rgbR.value) || 0;
-    const g = parseInt(elements.rgbG.value) || 0;
-    const b = parseInt(elements.rgbB.value) || 0;
+// リストに色を追加
+function addColorToList(r, g, b) {
+    // 既に同じ色が選択されているかチェック
+    const exists = AppState.selectedColors.some(
+        color => color.r === r && color.g === g && color.b === b
+    );
+    if (exists) {
+        showError('この色は既に選択されています');
+        return;
+    }
 
-    // 範囲チェック
-    if (r >= 0 && r <= 255 && g >= 0 && g <= 255 && b >= 0 && b <= 255) {
-        setSelectedColor(r, g, b);
+    AppState.selectedColors.push({ r, g, b });
+    updateColorListUI();
+    updateProcessButton();
+}
+
+// 色リストUIを更新
+function updateColorListUI() {
+    if (!elements.colorList) return;
+
+    elements.colorList.innerHTML = '';
+
+    AppState.selectedColors.forEach((color, index) => {
+        const colorItem = document.createElement('div');
+        colorItem.className = 'color-item';
+        colorItem.innerHTML = `
+            <div class="color-preview-box" style="background-color: rgb(${color.r}, ${color.g}, ${color.b})"></div>
+            <span class="color-text">RGB(${color.r}, ${color.g}, ${color.b})</span>
+            <button class="remove-color-btn" data-index="${index}">✕</button>
+        `;
+        elements.colorList.appendChild(colorItem);
+
+        // 削除ボタンのイベントリスナー
+        const removeBtn = colorItem.querySelector('.remove-color-btn');
+        removeBtn.addEventListener('click', () => removeColor(index));
+    });
+
+    // 最大3色まで選択可能
+    if (elements.addColorBtn) {
+        elements.addColorBtn.disabled = AppState.selectedColors.length >= 3 || !AppState.sessionId;
     }
 }
 
@@ -232,26 +258,23 @@ function handleThresholdInput() {
     elements.thresholdValue.textContent = threshold;
 }
 
-// 選択色の設定
-function setSelectedColor(r, g, b) {
-    AppState.selectedColor = { r, g, b };
+// 色を削除
+function removeColor(index) {
+    AppState.selectedColors.splice(index, 1);
+    updateColorListUI();
+    updateProcessButton();
+}
 
-    // UIを更新
-    elements.colorBox.style.backgroundColor = `rgb(${r}, ${g}, ${b})`;
-    elements.colorValue.textContent = `RGB(${r}, ${g}, ${b})`;
-    elements.rgbR.value = r;
-    elements.rgbG.value = g;
-    elements.rgbB.value = b;
-
-    // 処理ボタンを有効化
-    if (AppState.sessionId) {
-        elements.processBtn.disabled = false;
+// 処理ボタンの状態を更新
+function updateProcessButton() {
+    if (elements.processBtn) {
+        elements.processBtn.disabled = !AppState.sessionId || AppState.selectedColors.length === 0;
     }
 }
 
 // 透過処理ハンドラ
 async function handleProcess() {
-    if (!AppState.sessionId || !AppState.selectedColor) {
+    if (!AppState.sessionId || AppState.selectedColors.length === 0) {
         showError('画像をアップロードし、色を選択してください');
         return;
     }
@@ -262,6 +285,17 @@ async function handleProcess() {
     try {
         const threshold = parseInt(elements.threshold.value) || 30;
 
+        // 複数色の場合は配列の配列、単一色の場合は単純な配列
+        let rgbData;
+        if (AppState.selectedColors.length === 1) {
+            // 単一色の場合（後方互換性）
+            const color = AppState.selectedColors[0];
+            rgbData = [color.r, color.g, color.b];
+        } else {
+            // 複数色の場合
+            rgbData = AppState.selectedColors.map(color => [color.r, color.g, color.b]);
+        }
+
         const response = await fetch('/api/process', {
             method: 'POST',
             headers: {
@@ -270,7 +304,7 @@ async function handleProcess() {
             body: JSON.stringify({
                 session_id: AppState.sessionId,
                 filename: AppState.filename,
-                rgb: [AppState.selectedColor.r, AppState.selectedColor.g, AppState.selectedColor.b],
+                rgb: rgbData,
                 threshold: threshold,
             }),
         });

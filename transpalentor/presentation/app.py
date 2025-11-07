@@ -21,6 +21,30 @@ from ..infrastructure.file_storage import (
     get_session_directory,
 )
 
+
+def _convert_rgb_to_domain_format(
+    rgb: list[int] | list[list[int]]
+) -> tuple[int, int, int] | list[tuple[int, int, int]]:
+    """
+    APIリクエストのRGB形式をドメインロジックの形式に変換
+
+    Args:
+        rgb: APIリクエストのRGB値
+             - 単一色: [R, G, B]
+             - 複数色: [[R, G, B], [R, G, B], ...]
+
+    Returns:
+        ドメインロジック用のRGB値
+        - 単一色: (R, G, B)
+        - 複数色: [(R, G, B), (R, G, B), ...]
+    """
+    if len(rgb) == 3 and all(isinstance(x, int) for x in rgb):
+        # 単一色の場合
+        return tuple(rgb)
+    else:
+        # 複数色の場合
+        return [tuple(color) for color in rgb]
+
 # プロジェクトのルートディレクトリを取得
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
 STATIC_DIR = BASE_DIR / "static"
@@ -179,9 +203,9 @@ async def process_transparency(request: ProcessRequest) -> ProcessResponse:
     image = Image.open(original_path)
 
     # 透過処理を実行
-    rgb_tuple = tuple(request.rgb)
+    rgb_data = _convert_rgb_to_domain_format(request.rgb)
     processed_image = make_transparent(
-        image, rgb=rgb_tuple, threshold=request.threshold
+        image, rgb=rgb_data, threshold=request.threshold
     )
 
     # 処理済み画像のファイル名を生成

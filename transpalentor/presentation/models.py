@@ -28,16 +28,40 @@ class ProcessRequest(BaseModel):
 
     session_id: str = Field(..., description="セッションID")
     filename: str = Field(..., description="処理対象のファイル名")
-    rgb: list[int] = Field(..., min_length=3, max_length=3, description="透過対象色 [R, G, B]")
+    rgb: list[int] | list[list[int]] = Field(
+        ...,
+        description="透過対象色 [R, G, B] または [[R, G, B], [R, G, B], ...]（最大3色）",
+    )
     threshold: int = Field(default=30, ge=0, le=255, description="色の許容範囲 (0-255)")
 
     @field_validator("rgb")
     @classmethod
-    def validate_rgb_range(cls, v: list[int]) -> list[int]:
-        """RGB値の範囲をバリデーション"""
-        for value in v:
-            if not 0 <= value <= 255:
-                raise ValueError(f"RGB値は0-255の範囲である必要があります: {value}")
+    def validate_rgb(cls, v: list[int] | list[list[int]]) -> list[int] | list[list[int]]:
+        """RGB値のバリデーション"""
+        # 単一色の場合（後方互換性）
+        if len(v) == 3 and all(isinstance(x, int) for x in v):
+            for value in v:
+                if not 0 <= value <= 255:
+                    raise ValueError(f"RGB値は0-255の範囲である必要があります: {value}")
+            return v
+
+        # 複数色の場合
+        if not all(isinstance(color, list) for color in v):
+            raise ValueError("rgbは [R, G, B] または [[R, G, B], ...] の形式である必要があります")
+
+        if len(v) > 3:
+            raise ValueError("最大3色まで指定できます")
+
+        if len(v) == 0:
+            raise ValueError("少なくとも1色を指定してください")
+
+        for color in v:
+            if len(color) != 3:
+                raise ValueError(f"各色は[R, G, B]の形式である必要があります: {color}")
+            for value in color:
+                if not isinstance(value, int) or not 0 <= value <= 255:
+                    raise ValueError(f"RGB値は0-255の整数である必要があります: {value}")
+
         return v
 
 
