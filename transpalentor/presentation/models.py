@@ -49,6 +49,34 @@ class ProcessResponse(BaseModel):
     filename: str = Field(..., description="ファイル名")
 
 
+class EraseRequest(BaseModel):
+    """消しゴムツールリクエスト"""
+
+    session_id: str = Field(..., description="セッションID")
+    filename: str = Field(..., description="処理対象のファイル名")
+    strokes: list[list[int]] = Field(..., description="ストローク座標 [[x, y], [x, y], ...]")
+    brush_size: int = Field(default=10, ge=1, le=100, description="ブラシサイズ (1-100)")
+
+    @field_validator("strokes")
+    @classmethod
+    def validate_strokes(cls, v: list[list[int]]) -> list[list[int]]:
+        """ストローク座標のバリデーション"""
+        for coord in v:
+            if len(coord) != 2:
+                raise ValueError(f"座標は[x, y]の形式である必要があります: {coord}")
+            if coord[0] < 0 or coord[1] < 0:
+                raise ValueError(f"座標は0以上である必要があります: {coord}")
+        return v
+
+
+class EraseResponse(BaseModel):
+    """消しゴムツールレスポンス"""
+
+    session_id: str = Field(..., description="セッションID")
+    processed_url: str = Field(..., description="処理済み画像のURL")
+    filename: str = Field(..., description="ファイル名")
+
+
 class CleanupResponse(BaseModel):
     """クリーンアップレスポンス"""
 

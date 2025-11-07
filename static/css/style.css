@@ -327,6 +327,113 @@ h1 {
     display: block;
 }
 
+/* Tool Section */
+.tool-section {
+    margin-top: 30px;
+    padding: 20px;
+    background: #f8f9fa;
+    border-radius: 12px;
+}
+
+.tool-section h3 {
+    margin-bottom: 20px;
+    color: #444;
+}
+
+.tool-controls {
+    display: flex;
+    gap: 15px;
+    margin-bottom: 15px;
+    flex-wrap: wrap;
+}
+
+.tool-btn {
+    padding: 12px 24px;
+    background: white;
+    color: #667eea;
+    border: 2px solid #667eea;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 1rem;
+    font-weight: 600;
+    transition: all 0.3s ease;
+}
+
+.tool-btn:hover {
+    background: #f0f4ff;
+}
+
+.tool-btn.active {
+    background: #667eea;
+    color: white;
+}
+
+/* Eraser Options */
+.eraser-options {
+    margin-top: 15px;
+    padding-top: 15px;
+    border-top: 2px solid #e0e0e0;
+}
+
+.eraser-options label {
+    font-weight: 600;
+    color: #555;
+    display: block;
+    margin-bottom: 10px;
+}
+
+.brush-sizes {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 10px;
+    flex-wrap: wrap;
+}
+
+.brush-size-btn {
+    padding: 8px 16px;
+    background: white;
+    color: #667eea;
+    border: 2px solid #667eea;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 0.9rem;
+    font-weight: 600;
+    transition: all 0.2s ease;
+}
+
+.brush-size-btn:hover {
+    background: #f0f4ff;
+}
+
+.brush-size-btn.active {
+    background: #667eea;
+    color: white;
+}
+
+.tool-hint {
+    color: #999;
+    font-size: 0.85rem;
+    display: block;
+    margin-top: 10px;
+}
+
+/* Canvas Container */
+.canvas-container {
+    position: relative;
+}
+
+.canvas-container canvas {
+    position: absolute;
+    top: 0;
+    left: 0;
+    cursor: crosshair;
+    display: none;
+}
+
+.canvas-container canvas.active {
+    display: block;
+}
+
 /* Responsive Design */
 @media (max-width: 768px) {
     .preview-container {
@@ -336,6 +443,14 @@ h1 {
     .color-controls {
         flex-direction: column;
         align-items: stretch;
+    }
+
+    .tool-controls, .brush-sizes {
+        flex-direction: column;
+    }
+
+    .tool-btn, .brush-size-btn {
+        width: 100%;
     }
 
     #app {

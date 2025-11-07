@@ -3,6 +3,11 @@ const AppState = {
     sessionId: null,
     filename: null,
     selectedColor: null,
+    processedFilename: null,
+    currentTool: 'eyedropper', // 'eyedropper' or 'eraser'
+    brushSize: 10,
+    isDrawing: false,
+    strokes: [],
 };
 
 // DOM要素の取得
@@ -23,6 +28,13 @@ const elements = {
     thresholdValue: null,
     loading: null,
     errorMessage: null,
+    // ツール関連
+    toolSection: null,
+    eyedropperToolBtn: null,
+    eraserToolBtn: null,
+    eraserOptions: null,
+    eraserCanvas: null,
+    brushSizeBtns: null,
 };
 
 // 初期化
@@ -50,6 +62,13 @@ function initElements() {
     elements.thresholdValue = document.getElementById('thresholdValue');
     elements.loading = document.getElementById('loading');
     elements.errorMessage = document.getElementById('errorMessage');
+    // ツール関連
+    elements.toolSection = document.getElementById('toolSection');
+    elements.eyedropperToolBtn = document.getElementById('eyedropperToolBtn');
+    elements.eraserToolBtn = document.getElementById('eraserToolBtn');
+    elements.eraserOptions = document.getElementById('eraserOptions');
+    elements.eraserCanvas = document.getElementById('eraserCanvas');
+    elements.brushSizeBtns = document.querySelectorAll('.brush-size-btn');
 }
 
 // イベントリスナーの設定
@@ -76,6 +95,38 @@ function attachEventListeners() {
     // 閾値スライダーの変更イベント
     if (elements.threshold) {
         elements.threshold.addEventListener('input', handleThresholdInput);
+    }
+
+    // ツール切り替えイベント
+    if (elements.eyedropperToolBtn) {
+        elements.eyedropperToolBtn.addEventListener('click', () => switchTool('eyedropper'));
+    }
+
+    if (elements.eraserToolBtn) {
+        elements.eraserToolBtn.addEventListener('click', () => switchTool('eraser'));
+    }
+
+    // ブラシサイズ選択イベント
+    elements.brushSizeBtns.forEach(btn => {
+        btn.addEventListener('click', handleBrushSizeSelect);
+    });
+
+    // Canvas イベント（マウス）
+    if (elements.eraserCanvas) {
+        elements.eraserCanvas.addEventListener('mousedown', handleCanvasMouseDown);
+        elements.eraserCanvas.addEventListener('mousemove', handleCanvasMouseMove);
+        elements.eraserCanvas.addEventListener('mouseup', handleCanvasMouseUp);
+        elements.eraserCanvas.addEventListener('mouseleave', handleCanvasMouseUp);
+
+        // タッチイベント
+        elements.eraserCanvas.addEventListener('touchstart', handleCanvasTouchStart);
+        elements.eraserCanvas.addEventListener('touchmove', handleCanvasTouchMove);
+        elements.eraserCanvas.addEventListener('touchend', handleCanvasTouchEnd);
+    }
+
+    // 処理後画像のロードイベント
+    if (elements.processedImage) {
+        elements.processedImage.addEventListener('load', initCanvas);
     }
 }
 
@@ -231,8 +282,16 @@ async function handleProcess() {
 
         const data = await response.json();
 
+        // 処理済みファイル名を保存
+        AppState.processedFilename = data.filename;
+
         // 処理済み画像を表示（キャッシュ回避のためタイムスタンプを追加）
         elements.processedImage.src = data.processed_url + '?t=' + Date.now();
+
+        // ツールセクションを表示
+        if (elements.toolSection) {
+            elements.toolSection.style.display = 'block';
+        }
 
     } catch (error) {
         console.error('Process error:', error);
@@ -261,5 +320,236 @@ function showError(message) {
 function hideError() {
     if (elements.errorMessage) {
         elements.errorMessage.classList.remove('active');
+    }
+}
+
+// =========================================
+// 消しゴムツール関連の関数
+// =========================================
+
+// ツール切り替え
+function switchTool(tool) {
+    AppState.currentTool = tool;
+
+    // ツールボタンのアクティブ状態を切り替え
+    if (tool === 'eyedropper') {
+        elements.eyedropperToolBtn.classList.add('active');
+        elements.eraserToolBtn.classList.remove('active');
+        elements.eraserOptions.style.display = 'none';
+        elements.eraserCanvas.classList.remove('active');
+    } else if (tool === 'eraser') {
+        elements.eyedropperToolBtn.classList.remove('active');
+        elements.eraserToolBtn.classList.add('active');
+        elements.eraserOptions.style.display = 'block';
+        elements.eraserCanvas.classList.add('active');
+    }
+}
+
+// ブラシサイズ選択
+function handleBrushSizeSelect(event) {
+    const size = parseInt(event.target.dataset.size);
+    if (size) {
+        AppState.brushSize = size;
+
+        // ボタンのアクティブ状態を更新
+        elements.brushSizeBtns.forEach(btn => {
+            btn.classList.remove('active');
+        });
+        event.target.classList.add('active');
+    }
+}
+
+// Canvasの初期化
+function initCanvas() {
+    if (!elements.eraserCanvas || !elements.processedImage) return;
+
+    const img = elements.processedImage;
+    const canvas = elements.eraserCanvas;
+
+    // 画像のサイズに合わせてCanvasをリサイズ
+    canvas.width = img.width;
+    canvas.height = img.height;
+
+    // Canvasの位置とサイズを画像に合わせる
+    canvas.style.width = img.width + 'px';
+    canvas.style.height = img.height + 'px';
+}
+
+// Canvas座標を取得（マウス位置を画像座標に変換）
+function getCanvasCoordinates(event) {
+    const canvas = elements.eraserCanvas;
+    const rect = canvas.getBoundingClientRect();
+    const scaleX = canvas.width / rect.width;
+    const scaleY = canvas.height / rect.height;
+
+    const x = Math.floor((event.clientX - rect.left) * scaleX);
+    const y = Math.floor((event.clientY - rect.top) * scaleY);
+
+    return [x, y];
+}
+
+// Canvas座標を取得（タッチ位置を画像座標に変換）
+function getCanvasTouchCoordinates(touch) {
+    const canvas = elements.eraserCanvas;
+    const rect = canvas.getBoundingClientRect();
+    const scaleX = canvas.width / rect.width;
+    const scaleY = canvas.height / rect.height;
+
+    const x = Math.floor((touch.clientX - rect.left) * scaleX);
+    const y = Math.floor((touch.clientY - rect.top) * scaleY);
+
+    return [x, y];
+}
+
+// ブラシプレビューを描画
+function drawBrushPreview(x, y) {
+    const canvas = elements.eraserCanvas;
+    const ctx = canvas.getContext('2d');
+
+    // Canvasをクリア
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    // ブラシプレビューを描画（円）
+    ctx.beginPath();
+    ctx.arc(x, y, AppState.brushSize / 2, 0, 2 * Math.PI);
+    ctx.strokeStyle = 'rgba(255, 0, 0, 0.8)';
+    ctx.lineWidth = 2;
+    ctx.stroke();
+
+    // 既存のストロークを描画
+    if (AppState.strokes.length > 0) {
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.3)';
+        AppState.strokes.forEach(stroke => {
+            ctx.beginPath();
+            ctx.arc(stroke[0], stroke[1], AppState.brushSize / 2, 0, 2 * Math.PI);
+            ctx.fill();
+        });
+    }
+}
+
+// マウスダウンイベント
+function handleCanvasMouseDown(event) {
+    if (AppState.currentTool !== 'eraser' || !AppState.processedFilename) return;
+
+    AppState.isDrawing = true;
+    AppState.strokes = [];
+
+    const coords = getCanvasCoordinates(event);
+    AppState.strokes.push(coords);
+    drawBrushPreview(coords[0], coords[1]);
+}
+
+// マウス移動イベント
+function handleCanvasMouseMove(event) {
+    if (AppState.currentTool !== 'eraser') return;
+
+    const coords = getCanvasCoordinates(event);
+
+    if (AppState.isDrawing) {
+        // ストロークを記録
+        AppState.strokes.push(coords);
+        drawBrushPreview(coords[0], coords[1]);
+    } else {
+        // プレビューのみ表示
+        drawBrushPreview(coords[0], coords[1]);
+    }
+}
+
+// マウスアップイベント
+async function handleCanvasMouseUp(event) {
+    if (!AppState.isDrawing) return;
+
+    AppState.isDrawing = false;
+
+    // ストロークをバックエンドに送信
+    if (AppState.strokes.length > 0) {
+        await sendEraseRequest();
+    }
+}
+
+// タッチスタートイベント
+function handleCanvasTouchStart(event) {
+    event.preventDefault();
+    if (AppState.currentTool !== 'eraser' || !AppState.processedFilename) return;
+
+    AppState.isDrawing = true;
+    AppState.strokes = [];
+
+    const touch = event.touches[0];
+    const coords = getCanvasTouchCoordinates(touch);
+    AppState.strokes.push(coords);
+    drawBrushPreview(coords[0], coords[1]);
+}
+
+// タッチ移動イベント
+function handleCanvasTouchMove(event) {
+    event.preventDefault();
+    if (AppState.currentTool !== 'eraser' || !AppState.isDrawing) return;
+
+    const touch = event.touches[0];
+    const coords = getCanvasTouchCoordinates(touch);
+    AppState.strokes.push(coords);
+    drawBrushPreview(coords[0], coords[1]);
+}
+
+// タッチエンドイベント
+async function handleCanvasTouchEnd(event) {
+    event.preventDefault();
+    if (!AppState.isDrawing) return;
+
+    AppState.isDrawing = false;
+
+    // ストロークをバックエンドに送信
+    if (AppState.strokes.length > 0) {
+        await sendEraseRequest();
+    }
+}
+
+// 消しゴムリクエストをバックエンドに送信
+async function sendEraseRequest() {
+    if (!AppState.sessionId || !AppState.processedFilename || AppState.strokes.length === 0) {
+        return;
+    }
+
+    showLoading(true);
+    hideError();
+
+    try {
+        const response = await fetch('/api/erase', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                session_id: AppState.sessionId,
+                filename: AppState.processedFilename,
+                strokes: AppState.strokes,
+                brush_size: AppState.brushSize,
+            }),
+        });
+
+        if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.detail || '消しゴム処理に失敗しました');
+        }
+
+        const data = await response.json();
+
+        // 処理済み画像を更新
+        elements.processedImage.src = data.processed_url;
+
+        // Canvasをクリア
+        const canvas = elements.eraserCanvas;
+        const ctx = canvas.getContext('2d');
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        // ストロークをリセット
+        AppState.strokes = [];
+
+    } catch (error) {
+        console.error('Erase error:', error);
+        showError('消しゴム処理に失敗しました: ' + error.message);
+    } finally {
+        showLoading(false);
     }
 }
