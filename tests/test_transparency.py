@@ -197,3 +197,142 @@ def test_make_transparent_large_image() -> None:
 
     # パフォーマンスの目安（10秒以内に完了するはず）
     assert elapsed < 10.0, f"Processing took too long: {elapsed:.2f}s"
+
+
+def test_make_transparent_multiple_colors() -> None:
+    """複数色の透過処理が正しく動作することをテスト"""
+    from transpalentor.domain.transparency import make_transparent
+
+    # 赤、緑、青、黄色のピクセルを持つ画像を作成
+    colors = [
+        (255, 0, 0),    # 赤
+        (0, 255, 0),    # 緑
+        (0, 0, 255),    # 青
+        (255, 255, 0),  # 黄色
+    ]
+    image = create_test_image_with_colors(colors)
+
+    # 赤と青を透過（2色）
+    result = make_transparent(image, rgb=[(255, 0, 0), (0, 0, 255)])
+
+    # RGBA形式に変換されていることを確認
+    assert result.mode == "RGBA"
+
+    # ピクセルを確認
+    pixels = result.load()
+
+    # 赤は透過
+    r, g, b, a = pixels[0, 0]
+    assert (r, g, b) == (255, 0, 0)
+    assert a == 0
+
+    # 緑は保持
+    r, g, b, a = pixels[1, 0]
+    assert (r, g, b) == (0, 255, 0)
+    assert a == 255
+
+    # 青は透過
+    r, g, b, a = pixels[2, 0]
+    assert (r, g, b) == (0, 0, 255)
+    assert a == 0
+
+    # 黄色は保持
+    r, g, b, a = pixels[3, 0]
+    assert (r, g, b) == (255, 255, 0)
+    assert a == 255
+
+
+def test_make_transparent_three_colors() -> None:
+    """3色の透過処理が正しく動作することをテスト"""
+    from transpalentor.domain.transparency import make_transparent
+
+    # 5色のピクセルを持つ画像を作成
+    colors = [
+        (255, 0, 0),    # 赤
+        (0, 255, 0),    # 緑
+        (0, 0, 255),    # 青
+        (255, 255, 0),  # 黄色
+        (255, 0, 255),  # マゼンタ
+    ]
+    image = create_test_image_with_colors(colors)
+
+    # 赤、青、マゼンタを透過（3色）
+    result = make_transparent(image, rgb=[(255, 0, 0), (0, 0, 255), (255, 0, 255)])
+
+    pixels = result.load()
+
+    # 赤は透過
+    r, g, b, a = pixels[0, 0]
+    assert a == 0
+
+    # 緑は保持
+    r, g, b, a = pixels[1, 0]
+    assert a == 255
+
+    # 青は透過
+    r, g, b, a = pixels[2, 0]
+    assert a == 0
+
+    # 黄色は保持
+    r, g, b, a = pixels[3, 0]
+    assert a == 255
+
+    # マゼンタは透過
+    r, g, b, a = pixels[4, 0]
+    assert a == 0
+
+
+def test_make_transparent_single_color_backwards_compatible() -> None:
+    """1色のみの場合も動作することをテスト（後方互換性）"""
+    from transpalentor.domain.transparency import make_transparent
+
+    # 赤と青のピクセルを持つ画像を作成
+    image = create_test_image_with_colors([(255, 0, 0), (0, 0, 255)])
+
+    # 1色のみを透過（タプル形式）
+    result = make_transparent(image, rgb=(255, 0, 0))
+
+    pixels = result.load()
+
+    # 赤は透過
+    r, g, b, a = pixels[0, 0]
+    assert a == 0
+
+    # 青は保持
+    r, g, b, a = pixels[1, 0]
+    assert a == 255
+
+
+def test_make_transparent_multiple_colors_with_threshold() -> None:
+    """複数色の透過処理で閾値が正しく動作することをテスト"""
+    from transpalentor.domain.transparency import make_transparent
+
+    # 赤と少し異なる赤のピクセルを持つ画像
+    colors = [
+        (255, 0, 0),    # 純粋な赤
+        (250, 5, 5),    # 少し異なる赤
+        (0, 255, 0),    # 緑
+        (0, 250, 5),    # 少し異なる緑
+    ]
+    image = create_test_image_with_colors(colors)
+
+    # 赤と緑を透過、閾値10で近似色も透過
+    result = make_transparent(image, rgb=[(255, 0, 0), (0, 255, 0)], threshold=10)
+
+    pixels = result.load()
+
+    # 純粋な赤は透過
+    r, g, b, a = pixels[0, 0]
+    assert a == 0
+
+    # 少し異なる赤も透過（閾値内）
+    r, g, b, a = pixels[1, 0]
+    assert a == 0
+
+    # 純粋な緑は透過
+    r, g, b, a = pixels[2, 0]
+    assert a == 0
+
+    # 少し異なる緑も透過（閾値内）
+    r, g, b, a = pixels[3, 0]
+    assert a == 0
