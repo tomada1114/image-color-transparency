@@ -10,7 +10,7 @@ from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 
 from .error_handlers import register_exception_handlers
-from .models import UploadResponse
+from .models import UploadResponse, ProcessRequest, ProcessResponse
 from .exceptions import SessionNotFoundError
 from ..application.validation import validate_image_file, get_file_extension
 from ..infrastructure.file_storage import (
@@ -142,6 +142,63 @@ async def get_image(session_id: str, filename: str) -> FileResponse:
         mime_type = "application/octet-stream"
 
     return FileResponse(str(file_path), media_type=mime_type)
+
+
+@app.post("/api/process", response_model=ProcessResponse)
+async def process_transparency(request: ProcessRequest) -> ProcessResponse:
+    """
+    画像の透過処理を実行
+
+    Args:
+        request: 透過処理リクエスト（セッションID、ファイル名、RGB値）
+
+    Returns:
+        処理済み画像のURL
+
+    Raises:
+        SessionNotFoundError: セッションまたはファイルが見つからない場合
+    """
+    from PIL import Image
+    from ..domain.transparency import make_transparent
+
+    # セッションIDのバリデーション
+    if not validate_session_id(request.session_id):
+        raise SessionNotFoundError(session_id=request.session_id)
+
+    # セッションディレクトリを取得
+    session_dir = get_session_directory(request.session_id)
+
+    # 元画像のパスを構築
+    original_path = session_dir / request.filename
+
+    # ファイルが存在するか確認
+    if not original_path.exists():
+        raise SessionNotFoundError(session_id=request.session_id)
+
+    # 画像を読み込み
+    image = Image.open(original_path)
+
+    # 透過処理を実行
+    rgb_tuple = tuple(request.rgb)
+    processed_image = make_transparent(image, rgb=rgb_tuple)
+
+    # 処理済み画像のファイル名を生成
+    name_without_ext = original_path.stem
+    ext = original_path.suffix
+    processed_filename = f"{name_without_ext}_processed{ext}"
+
+    # 処理済み画像を保存
+    processed_path = session_dir / processed_filename
+    processed_image.save(str(processed_path), format="PNG")
+
+    # 処理済み画像のURLを生成
+    processed_url = f"/api/images/{request.session_id}/{processed_filename}"
+
+    return ProcessResponse(
+        session_id=request.session_id,
+        processed_url=processed_url,
+        filename=processed_filename,
+    )
 
 
 @app.get("/")

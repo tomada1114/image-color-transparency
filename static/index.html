@@ -9,7 +9,70 @@
 <body>
     <div id="app">
         <h1>Transpalentor</h1>
-        <p>画像の色指定による透過処理アプリケーション</p>
+        <p class="subtitle">画像の色指定による透過処理アプリケーション</p>
+
+        <!-- アップロードセクション -->
+        <div class="upload-section">
+            <div class="file-input-wrapper">
+                <input type="file" id="fileInput" accept="image/png,image/jpeg,image/bmp">
+                <label for="fileInput" class="upload-btn" id="uploadBtn">
+                    画像を選択
+                </label>
+            </div>
+        </div>
+
+        <!-- ローディング表示 -->
+        <div id="loading" class="loading">
+            <div class="spinner"></div>
+            <p>処理中...</p>
+        </div>
+
+        <!-- エラーメッセージ -->
+        <div id="errorMessage" class="error-message"></div>
+
+        <!-- プレビューセクション -->
+        <div id="previewSection" class="preview-section">
+            <div class="color-picker-section">
+                <h3>透過する色を選択</h3>
+                <div class="color-controls">
+                    <button id="eyedropperBtn" class="eyedropper-btn">
+                        🎨 スポイトで色を選択
+                    </button>
+
+                    <div class="rgb-input">
+                        <label>RGB:</label>
+                        <input type="number" id="rgbR" min="0" max="255" placeholder="R" value="255">
+                        <input type="number" id="rgbG" min="0" max="255" placeholder="G" value="255">
+                        <input type="number" id="rgbB" min="0" max="255" placeholder="B" value="255">
+                    </div>
+
+                    <div class="color-preview">
+                        <div id="colorBox" class="color-box"></div>
+                        <span id="colorValue" class="color-value">RGB(-, -, -)</span>
+                    </div>
+
+                    <button id="processBtn" class="process-btn" disabled>
+                        透過処理を実行
+                    </button>
+                </div>
+            </div>
+
+            <div class="preview-container">
+                <div class="preview-box">
+                    <h3>元画像</h3>
+                    <div class="image-wrapper">
+                        <img id="originalImage" src="" alt="元画像">
+                    </div>
+                </div>
+
+                <div class="preview-box">
+                    <h3>処理後</h3>
+                    <div class="image-wrapper">
+                        <img id="processedImage" src="" alt="処理後の画像">
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
     <script src="/static/js/app.js"></script>
 </body>
